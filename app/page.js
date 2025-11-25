@@ -1,64 +1,91 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from 'next/link';
+import TweetComposer from "@/components/TweetComposer";
+import TweetStructure from "@/components/TweetStructure";
+import TweetList from "@/components/TweetList";
+// import getRandomHour from "@/components/GetRandomHour.jsx";
+
+const uri = "mongodb+srv://eugenekolisnyk8_db_user:habNGAFy9YSucu0G@clustertwitter.zztkghy.mongodb.net/?appName=ClusterTwitter";
 
 export default function Home() {
+  const [tweets, setTweets] = useState([]); // tweets list
+  const [likes, setLikes] = useState({}); // likes count for each tweet
+  const [likedTweets, setLikedTweets] = useState({}); // liked tweets by user
+
+  useEffect(() => {
+    async function fetchTweets() {
+      const res = await fetch("https://dummyjson.com/posts");
+      const data = await res.json();
+      setTweets(data.posts);
+
+      const storedLiked = JSON.parse(localStorage.getItem('likedTweets')) || {};
+      const storedLikesCount = JSON.parse(localStorage.getItem('likesCount')) || {};
+      
+      const tweetLikes = {};
+      data.posts.forEach(tweet => {
+        {/* Priority: localStorage -> API */}
+        if (storedLikesCount[tweet.id] !== undefined) {
+          tweetLikes[tweet.id] = storedLikesCount[tweet.id];
+        } 
+
+        else if (tweet.reactions.likes !== undefined) {
+          tweetLikes[tweet.id] = tweet.reactions.likes;
+        }
+
+        // otherwise, default to 0
+        else {
+          tweetLikes[tweet.id] = 0;
+        }
+      });
+      
+      setLikes(tweetLikes);
+      setLikedTweets(storedLiked);
+    }
+    fetchTweets();
+  }, []);
+
+  const handleLikeToggle = (e, tweetId) => {
+  e.stopPropagation(); // prevents click
+
+  // new arrays for updates
+  const newLikedTweets = { ...likedTweets };
+  const newLikes = { ...likes };
+
+  // toggle like status
+  if (newLikedTweets[tweetId]) {
+    delete newLikedTweets[tweetId]; // delete like
+    newLikes[tweetId]--; // decrease likes -1
+  } else {
+    newLikedTweets[tweetId] = true; // add like
+    newLikes[tweetId]++; // increase likes +1
+  }
+
+  // update states
+  setLikedTweets(newLikedTweets);
+  setLikes(newLikes);
+  
+  localStorage.setItem('likedTweets', JSON.stringify(newLikedTweets));
+  localStorage.setItem('likesCount', JSON.stringify(newLikes));
+};
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="min-h-screen bg-black">
+      <main className="max-w-xl mx-auto">
+        <h1 className="text-3xl font-bold text-center my-6">📝 Latest Tweets</h1>
+        <TweetComposer />
+
+        {/* Tweets list */}
+        {tweets.map((tweet) => (
+          <TweetStructure
+            key={tweet.id}
+            tweet={tweet}
+            likes={likes[tweet.id]}
+            liked={Boolean(likedTweets[tweet.id])}
+            onLikeToggle={handleLikeToggle}
+          />
+        ))}
       </main>
     </div>
   );
