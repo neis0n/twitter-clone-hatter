@@ -10,31 +10,35 @@ export async function POST(req) {
 
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: "You are unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "You are unauthorized" },
+        { status: 401 }
+      );
     }
 
     const { tweetId } = await req.json();
-    const userEmail = session.user.email;
+    const username = session.user.username;
 
     const tweet = await Tweet.findById(tweetId);
     if (!tweet) {
       return NextResponse.json({ error: "Tweet not found" }, { status: 404 });
     }
 
-    if (tweet.dislikedBy.includes(userEmail)) {
-      tweet.dislikedBy = tweet.dislikedBy.filter((user) => user !== userEmail);
-      tweet.reactions.dislikes -= 1;
+    if (!Array.isArray(tweet.dislikedBy)) {
+      tweet.dislikedBy = [];
+    }
+
+    if (tweet.dislikedBy.includes(username)) {
+      tweet.dislikedBy = tweet.dislikedBy.filter((user) => user !== username);
     } else {
-      tweet.dislikedBy.push(userEmail);
-      tweet.reactions.dislikes += 1;
+      tweet.dislikedBy.push(username);
     }
 
     await tweet.save();
 
-    return NextResponse.json({
-      dislikes: tweet.reactions.dislikes,
-      dislikedBy: tweet.dislikedBy,
-    });
+    const updatedTweet = await Tweet.findById(tweetId).populate("author", "name username avatarUrl").lean();
+
+    return NextResponse.json(updatedTweet);
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

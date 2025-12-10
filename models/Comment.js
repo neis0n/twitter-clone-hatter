@@ -11,10 +11,7 @@ const CompanySchema = new mongoose.Schema({
     required: true,
     maxlength: [60, "Industry cannot be more than 60 characters"],
   },
-  founded_year: {
-    type: Number,
-    required: true,
-  },
+  founded_year: { type: Number, required: true, min: 1800, max: new Date().getFullYear() },
 });
 
 // we have to define it this way because of hot reloading

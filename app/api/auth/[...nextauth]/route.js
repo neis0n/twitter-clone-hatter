@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { makeSureDbIsReady } from "@/lib/db";
 import User from "@/models/User";
+import { TokenExpiredError } from "jsonwebtoken";
 
 export const authOptions = {
   providers: [
@@ -38,6 +39,9 @@ export const authOptions = {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
+          username: user.username,
+          role: user.role,
+          avatarUrl: user.avatarUrl,
         };
       },
     }),
@@ -51,6 +55,9 @@ export const authOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.username = user.username;
+        token.role = user.role;
+        token.avatarUrl = user.avatarUrl;
       }
       return token;
     },
@@ -58,6 +65,9 @@ export const authOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id;
+        session.user.username = token.username;
+        session.user.role = token.role;
+        session.user.avatarUrl = token.avatarUrl;
       }
       return session;
     },

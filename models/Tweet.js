@@ -1,14 +1,13 @@
 import mongoose from "mongoose";
 
 const TweetSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  body: { type: String, required: true },
+  title: { type: String, required: true, trim: true, maxlength: 60 },
+  body: { type: String, required: true, trim: true, maxlength: 500 },
   tags: [String],
-  reactions: {
-    likes: { type: Number, default: 0 },
-    dislikes: { type: Number, default: 0 },
-  }
- 
+  author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, },
+  dislikedBy: { type: Array, default: []},
+  isEdited: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.models.Tweet || mongoose.model("Tweet", TweetSchema);

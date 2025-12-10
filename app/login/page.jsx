@@ -37,7 +37,7 @@ export default function LoginPage() {
     <main className="container mx-auto p-6 min-h-screen flex items-center justify-center">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-          🔐 Login to Twitter Clone
+          Login
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
